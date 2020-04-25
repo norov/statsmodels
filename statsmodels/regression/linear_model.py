@@ -1632,13 +1632,13 @@ class RegressionResults(base.LikelihoodModelResults):
         is often called the standard error of the regression.
         """
         wresid = self.wresid
-        return np.dot(wresid, wresid) / self.df_resid
+        return wresid.T @ wresid / self.df_resid
 
     @cache_readonly
     def ssr(self):
         """Sum of squared (whitened) residuals."""
         wresid = self.wresid
-        return np.dot(wresid, wresid)
+        return np.sum(np.square(wresid), axis = 0)
 
     @cache_readonly
     def centered_tss(self):
@@ -1647,8 +1647,9 @@ class RegressionResults(base.LikelihoodModelResults):
         weights = getattr(model, 'weights', None)
         sigma = getattr(model, 'sigma', None)
         if weights is not None:
-            mean = np.average(model.endog, weights=weights)
-            return np.sum(weights * (model.endog - mean)**2)
+            mean = np.average(model.endog, weights=weights, axis = 0)
+            _endog = weights**0.5 * (model.endog - mean).T
+            return np.diag(_endog @ _endog.T)
         elif sigma is not None:
             # Exactly matches WLS when sigma is diagonal
             iota = np.ones_like(model.endog)
@@ -1670,7 +1671,7 @@ class RegressionResults(base.LikelihoodModelResults):
         variable.
         """
         wendog = self.model.wendog
-        return np.dot(wendog, wendog)
+        return np.sum(np.square(wendog), axis = 0)
 
     @cache_readonly
     def ess(self):
@@ -1799,7 +1800,7 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def bse(self):
         """The standard errors of the parameter estimates."""
-        return np.sqrt(np.diag(self.cov_params()))
+        return np.reshape(np.diag(self.cov_params()), self.params.shape)
 
     @cache_readonly
     def aic(self):

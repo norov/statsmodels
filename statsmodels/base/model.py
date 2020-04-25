@@ -1443,7 +1443,7 @@ class LikelihoodModelResults(Results):
             else:
                 if scale is None:
                     scale = self.scale
-                cov_p = self.normalized_cov_params * scale
+                cov_p = np.kron(self.normalized_cov_params, self.scale)
 
         if column is not None:
             column = np.asarray(column)
