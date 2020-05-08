@@ -617,6 +617,9 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
 
     res = result
     params = res.params
+    if endog_names is None:
+        endog_names = res.model.endog_names
+
     if params.ndim == 2:  # we've got multiple equations
         n_equ = params.shape[1]
         if len(endog_names) != params.shape[1]:
@@ -642,7 +645,7 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
     tables = []
     for eq in range(n_equ):
         restup = (res, res.params[:,eq], res.bse[:,eq], res.tvalues[:,eq],
-                  res.pvalues[:,eq], res.conf_int(alpha)[eq])
+                  res.pvalues[:,eq], res.conf_int(alpha)[:, :, eq])
 
         skiph = False
         tble = summary_params(restup, yname=endog_names[eq],

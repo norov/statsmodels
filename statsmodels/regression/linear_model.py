@@ -2582,6 +2582,7 @@ class RegressionResults(base.LikelihoodModelResults):
 
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
+        dw = durbin_watson(self.wresid)
 
         eigvals = self.eigenvals
         condno = self.condition_number
@@ -2613,30 +2614,60 @@ class RegressionResults(base.LikelihoodModelResults):
             top_left.append(('Covariance Type:', [self.cov_type]))
 
         rsquared_type = '' if self.k_constant else ' (uncentered)'
-        top_right = [('R-squared' + rsquared_type + ':',
-                      ["%#8.3f" % self.rsquared]),
-                     ('Adj. R-squared' + rsquared_type + ':',
-                      ["%#8.3f" % self.rsquared_adj]),
-                     ('F-statistic:', ["%#8.4g" % self.fvalue]),
-                     ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
-                     ('Log-Likelihood:', None),
+
+        rsq = []
+        adj_rsq = []
+        fvalue = []
+        fstat = []
+        omni_p = []
+        omnipv_p = []
+        skew_p = []
+        kurtosis_p = []
+        dw_p = []
+        jb_p = []
+        jbpv_p = []
+        if isinstance(self.model.endog_names, list):
+            endog_names = self.model.endog_names
+            for idx, name in enumerate(endog_names):
+                rsq.append((name + ': R-squared' + rsquared_type + ':',
+                      ["%#8.3f" % self.rsquared[idx]]))
+                adj_rsq.append((name + ': Adj. R-squared' + rsquared_type + ':',
+                          ["%#8.3f" % self.rsquared_adj[idx]]))
+                fvalue.append((name + ': F-statistic:', ["%#8.4g" % self.fvalue[idx]]))
+                fstat.append((name + ': Prob (F-statistic):',
+                    ["%#6.3g" % self.f_pvalue[idx]]))
+
+                omni_p.append((name + ': Omnibus:', ["%#6.3f" % omni[idx]]))
+                omnipv_p.append((name + ': Prob(Omnibus):', ["%#6.3f" % omnipv[idx]]))
+                skew_p.append((name + ': Skew:', ["%#6.3f" % skew[idx]]))
+                kurtosis_p.append((name + ': Skew:', ["%#6.3f" % kurtosis[idx]]))
+                dw_p.append((name + ': Durbin-Watson:', ["%#8.3f" % dw[idx]]))
+                jb_p.append((name + ': Jarque-Bera (JB):', ["%#8.3f" % jb[idx]]))
+                jbpv_p.append((name + ': Prob(JB):', ["%#8.3f" % jbpv[idx]]))
+        else:
+            rsq = [('R-squared' + rsquared_type + ':',
+                      ["%#8.3f" % self.rsquared])]
+            adj_rsq = [('Adj. R-squared' + rsquared_type + ':',
+                          ["%#8.3f" % self.rsquared_adj])]
+            fvalue = [('F-statistic:', ["%#8.4g" % self.fvalue])]
+            fstat = [('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue])]
+
+            omni_p = [('Omnibus:', ["%#6.3f" % omni])]
+            omnipv_p = [('Prob(Omnibus):', ["%#6.3f" % omnipv])]
+            skew_p = [('Skew:', ["%#6.3f" % skew])]
+            kurtosis_p = [('Skew:', ["%#6.3f" % kurtosis])]
+            dw_p = [('Durbin-Watson:', ["%#8.3f" % dw])]
+            jb_p = [('Jarque-Bera (JB):', ["%#8.3f" % jb])]
+            jbpv_p = [('Prob(JB):', ["%#8.3f" % jbpv])]
+
+        top_right = rsq + adj_rsq + fvalue + fstat + [
+                    ('Log-Likelihood:', None),
                      ('AIC:', ["%#8.4g" % self.aic]),
                      ('BIC:', ["%#8.4g" % self.bic])
                      ]
 
-        diagn_left = [('Omnibus:', ["%#6.3f" % omni]),
-                      ('Prob(Omnibus):', ["%#6.3f" % omnipv]),
-                      ('Skew:', ["%#6.3f" % skew]),
-                      ('Kurtosis:', ["%#6.3f" % kurtosis])
-                      ]
-
-        diagn_right = [('Durbin-Watson:',
-                        ["%#8.3f" % durbin_watson(self.wresid)]
-                        ),
-                       ('Jarque-Bera (JB):', ["%#8.3f" % jb]),
-                       ('Prob(JB):', ["%#8.3g" % jbpv]),
-                       ('Cond. No.', ["%#8.3g" % condno])
-                       ]
+        diagn_left = omni_p + omnipv_p + skew_p + kurtosis_p
+        diagn_right = dw_p  + jb_p + jbpv_p +[('Cond. No.', ["%#8.3g" % condno])]
 
         if title is None:
             title = self.model.__class__.__name__ + ' ' + "Regression Results"
